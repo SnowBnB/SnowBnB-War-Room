@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SnowBnB — Capital Raise War Room</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --bg:#ffffff;--bg2:#f7f6f3;--bg3:#f0efe9;
+    --text:#1a1a18;--text2:#6b6a65;--text3:#9c9a92;
+    --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.2);
+    --radius:10px;--radius-lg:14px;
+  }
+  @media(prefers-color-scheme:dark){
+    :root{
+      --bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;
+      --text:#e8e6de;--text2:#9c9a92;--text3:#6b6a65;
+      --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.18);
+    }
+  }
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--text);height:100vh;display:flex;flex-direction:column;}
+  
+  /* Header */
+  .header{background:var(--bg);border-bottom:0.5px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+  .header-left h1{font-size:15px;font-weight:500;}
+  .header-left p{font-size:11px;color:var(--text2);margin-top:2px;}
+  .header-right{display:flex;gap:8px;align-items:center;}
+  .btn{padding:6px 14px;border:0.5px solid var(--border2);border-radius:20px;font-size:12px;cursor:pointer;background:var(--bg);color:var(--text);white-space:nowrap;transition:background 0.15s;}
+  .btn:hover{background:var(--bg2);}
+  .btn.primary{background:var(--text);color:var(--bg);border-color:var(--text);}
+  .btn.primary:hover{opacity:0.85;}
+  .btn:disabled{opacity:0.35;cursor:not-allowed;}
+
+  /* Agent chips */
+  .agents-bar{background:var(--bg);border-bottom:0.5px solid var(--border);padding:8px 20px;display:flex;gap:6px;overflow-x:auto;flex-shrink:0;scrollbar-width:none;}
+  .agents-bar::-webkit-scrollbar{display:none;}
+  .chip{display:flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:0.5px solid var(--border);font-size:11px;cursor:pointer;white-space:nowrap;background:var(--bg);color:var(--text2);transition:all 0.1s;user-select:none;}
+  .chip.on{color:var(--text);font-weight:500;}
+  .chip .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+
+  /* Messages */
+  .messages{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px;}
+  .msg{display:flex;flex-direction:column;gap:4px;}
+  .msg.user{align-items:flex-end;}
+  .msg.agent{align-items:flex-start;}
+  .msg-meta{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2);}
+  .avatar{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;flex-shrink:0;}
+  .agent-name{font-weight:500;font-size:11px;}
+  .bubble{padding:9px 13px;border-radius:var(--radius-lg);font-size:13px;line-height:1.6;color:var(--text);max-width:85%;}
+  .msg.user .bubble{background:#e8f0fb;color:#0c447c;border-radius:12px 12px 3px 12px;}
+  @media(prefers-color-scheme:dark){.msg.user .bubble{background:#0c2a4a;color:#85b7eb;}}
+  .msg.agent .bubble{background:var(--bg);border:0.5px solid var(--border);border-radius:3px 12px 12px 12px;}
+  .msg.agent.is-reply .bubble{border-left:2px solid;}
+  .reply-label{font-size:10px;color:var(--text3);margin-bottom:2px;padding-left:2px;}
+
+  /* Typing */
+  .typing-bubble{display:inline-flex;align-items:center;gap:3px;padding:9px 13px;background:var(--bg);border:0.5px solid var(--border);border-radius:3px 12px 12px 12px;}
+  .typing-bubble span{width:5px;height:5px;border-radius:50%;background:var(--text3);animation:bounce 1s infinite;}
+  .typing-bubble span:nth-child(2){animation-delay:.15s;}
+  .typing-bubble span:nth-child(3){animation-delay:.3s;}
+  @keyframes bounce{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-4px);}}
+
+  /* Empty state */
+  .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text2);font-size:13px;text-align:center;padding:20px;}
+  .empty .emoji{font-size:32px;margin-bottom:4px;}
+  .empty strong{color:var(--text);font-size:15px;font-weight:500;}
+
+  /* Quick prompts */
+  .quick-bar{background:var(--bg);border-top:0.5px solid var(--border);padding:8px 20px;display:flex;gap:6px;overflow-x:auto;flex-shrink:0;scrollbar-width:none;}
+  .quick-bar::-webkit-scrollbar{display:none;}
+  .qp{font-size:11px;padding:4px 11px;border:0.5px solid var(--border);border-radius:20px;cursor:pointer;color:var(--text2);background:var(--bg);white-space:nowrap;flex-shrink:0;}
+  .qp:hover{color:var(--text);border-color:var(--border2);}
+
+  /* Input */
+  .input-area{background:var(--bg);border-top:0.5px solid var(--border);padding:12px 20px;display:flex;gap:10px;align-items:flex-end;flex-shrink:0;}
+  .input-area textarea{flex:1;resize:none;border:0.5px solid var(--border2);border-radius:var(--radius);padding:8px 12px;font-size:13px;font-family:inherit;color:var(--text);background:var(--bg2);min-height:38px;max-height:100px;outline:none;line-height:1.5;}
+  .input-area textarea:focus{border-color:var(--text3);}
+  .send-btn{padding:9px 18px;background:var(--text);color:var(--bg);border:none;border-radius:var(--radius);font-size:13px;cursor:pointer;white-space:nowrap;font-weight:500;}
+  .send-btn:hover{opacity:0.85;}
+  .send-btn:disabled{opacity:0.35;cursor:not-allowed;}
+
+  /* Mode toggle */
+  .mode-toggle{display:flex;gap:4px;}
+  .mode-btn{font-size:11px;padding:4px 11px;border:0.5px solid var(--border);border-radius:20px;cursor:pointer;background:var(--bg);color:var(--text2);}
+  .mode-btn.active{background:var(--bg3);border-color:var(--border2);color:var(--text);font-weight:500;}
+
+  /* History panel */
+  .history-panel{position:fixed;top:0;right:-320px;width:320px;height:100vh;background:var(--bg);border-left:0.5px solid var(--border);transition:right 0.25s;z-index:100;display:flex;flex-direction:column;}
+  .history-panel.open{right:0;}
+  .history-header{padding:16px 20px;border-bottom:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+  .history-header h3{font-size:14px;font-weight:500;}
+  .history-list{flex:1;overflow-y:auto;padding:12px;}
+  .history-item{padding:10px 12px;border-radius:var(--radius);cursor:pointer;margin-bottom:4px;border:0.5px solid transparent;}
+  .history-item:hover{background:var(--bg2);border-color:var(--border);}
+  .history-item .h-date{font-size:10px;color:var(--text3);}
+  .history-item .h-preview{font-size:12px;color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .close-btn{background:none;border:none;cursor:pointer;color:var(--text2);font-size:18px;padding:0;}
+
+  /* API key setup */
+  .setup-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:flex;align-items:center;justify-content:center;}
+  .setup-card{background:var(--bg);border-radius:var(--radius-lg);padding:28px;width:420px;max-width:90vw;}
+  .setup-card h2{font-size:18px;font-weight:500;margin-bottom:8px;}
+  .setup-card p{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px;}
+  .setup-card input{width:100%;padding:10px 12px;border:0.5px solid var(--border2);border-radius:var(--radius);font-size:13px;background:var(--bg2);color:var(--text);outline:none;margin-bottom:12px;}
+  .setup-card input:focus{border-color:var(--text3);}
+  .setup-note{font-size:11px;color:var(--text3);margin-bottom:16px;}
+
+  /* Notification flag */
+  .flag{background:#fef3e2;border:0.5px solid #f5a623;border-radius:var(--radius);padding:8px 12px;font-size:12px;color:#854f0b;margin-bottom:4px;max-width:85%;}
+  @media(prefers-color-scheme:dark){.flag{background:#2a1f08;border-color:#854f0b;color:#fac775;}}
+</style>
+</head>
+<body>
+
+<!-- API Key Setup Overlay -->
+<div class="setup-overlay" id="setupOverlay">
+  <div class="setup-card">
+    <h2>🏔️ Welcome to the SnowBnB War Room</h2>
+    <p>Enter your Claude API key to get started. Your key is stored only in your browser — never sent anywhere except directly to Anthropic's API.</p>
+    <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off"/>
+    <div class="setup-note">Get your key at console.anthropic.com → API Keys. Keep this file and your key private.</div>
+    <button class="btn primary" style="width:100%;padding:10px;" onclick="saveApiKey()">Enter the War Room</button>
+  </div>
+</div>
+
+<!-- History Panel -->
+<div class="history-panel" id="historyPanel">
+  <div class="history-header">
+    <h3>Conversation history</h3>
+    <button class="close-btn" onclick="toggleHistory()">×</button>
+  </div>
+  <div class="history-list" id="historyList"></div>
+  <div style="padding:12px;border-top:0.5px solid var(--border);display:flex;gap:8px;">
+    <button class="btn" style="flex:1;" onclick="newSession()">New session</button>
+    <button class="btn" onclick="clearAllHistory()" style="color:#a32d2d;">Clear all</button>
+  </div>
+</div>
+
+<!-- Main App -->
+<div class="header">
+  <div class="header-left">
+    <h1>SnowBnB — Capital Raise War Room</h1>
+    <p>Pre-seed · $1M–$1.5M · Victor · Marcus · Elena · Jake · Adrian · Macee · Daniel</p>
+  </div>
+  <div class="header-right">
+    <div class="mode-toggle">
+      <div class="mode-btn active" id="modeAll" onclick="setMode('all')">All respond</div>
+      <div class="mode-btn" id="modeReply" onclick="setMode('reply')">+ Cross-talk</div>
+    </div>
+    <button class="btn" onclick="toggleHistory()">History</button>
+    <button class="btn primary" onclick="doRollCall()">Roll call</button>
+  </div>
+</div>
+
+<div class="agents-bar" id="agentsBar"></div>
+
+<div class="messages" id="messages">
+  <div class="empty" id="emptyState">
+    <div class="emoji">🏔️</div>
+    <strong>War room is ready</strong>
+    <div>Your full team is standing by.<br>Hit Roll Call to introduce everyone, or start talking.</div>
+  </div>
+</div>
+
+<div class="quick-bar">
+  <div class="qp" onclick="usePrompt('Good morning team — pull your latest journal entries and give me each agent\\'s one-line status. Then let\\'s set our top 3 priorities for today.')">☀️ Morning brief</div>
+  <div class="qp" onclick="usePrompt('Time for nightly debrief. Each agent give me your war room flag — what you need from Daniel or the team before tomorrow.')">🌙 Nightly debrief</div>
+  <div class="qp" onclick="usePrompt('Victor, what\\'s the current state of our pitch narrative and what needs to be locked before Marcus sends any outreach?')">@Victor: pitch status</div>
+  <div class="qp" onclick="usePrompt('Marcus, give me the pipeline numbers. How many contacts this week, responses, and calls booked?')">@Marcus: pipeline</div>
+  <div class="qp" onclick="usePrompt('Adrian, map the warm intro paths for our top 5 investor targets right now.')">@Adrian: intro paths</div>
+  <div class="qp" onclick="usePrompt('Jake, if an investor asked for our data room today, what\\'s ready and what\\'s missing?')">@Jake: data room</div>
+  <div class="qp" onclick="usePrompt('Elena, what does our online presence look like right now? Would an investor Googling us be impressed?')">@Elena: credibility</div>
+  <div class="qp" onclick="usePrompt('Team — what are the biggest risks to closing this pre-seed round and how do we each mitigate them?')">Risk check</div>
+</div>
+
+<div class="input-area">
+  <textarea id="msgInput" placeholder="Message the team — use @Name to direct a specific agent, or ask everyone at once…" rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+  <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send</button>
+</div>
+
+<script>
+const SNOWBNB = `SnowBnB creates real, man-made snow at STR vacation cabins — NEVER say "artificial snow," always say "real snow" or "man-made snow." The product differentiates STR properties in saturated markets like the Smoky Mountains where winter bookings are slow. Daniel Evans (CEO) has a DoD rapid prototyping background and built SnowBnB through his construction company. Macee Evans (COO) has a BA in Business, ran Starbucks and Panera operations, was a real estate agent for investors, STR interior designer, and co-managed 13 STRs — that's when they spotted the winter slowdown opportunity. Key metrics: 3 units sold, $30K+ revenue, ~57-58% gross margin, unit price ~$13,998, 50+ organic inbound leads, units in TN and NC. TAM 9.8M STR properties, SAM 2.9M, SOM ~29K installs = $435M revenue potential. Raising $1M–$1.5M pre-seed equity, $3M–$6M pre-money valuation, $50K minimum check. $200K self-funded since Jan 2021. Top 6 of 120+ pitch competition entries. Potential investors: David (demo property owner, ~$75K), Tyler Coon (Mirro Hotel). Previously approached investors disagreed on valuation but stayed interested. 5 revenue streams: unit sales, parts/accessories, replacement units, premium software subscription, certified vendor/installer network.`;
+
+const AGENTS = [
+  {
+    id:'victor',name:'Victor',initials:'VH',color:'#185FA5',bg:'#E6F1FB',role:'Pitch & Narrative',
+    brief:`You are Victor Hale, SnowBnB's pitch architect and narrative strategist. Your mission: craft the investor pitch, narrative, and offer structure. You answer four questions in everything you produce: Why now? Why this team? Why this wins? Why does this become massive? You produce investor-ready pitch decks, 1-page executive summaries, investment memos, offer structure (SAFE vs equity), and use-of-funds breakdowns. Your hard rule: the narrative must be stress-tested like an investor trying to kill the deal. Weak messaging burns leads permanently — lock the story before Marcus sends any outreach. Speak with confidence and strategic clarity. 3-5 sentences unless detail is specifically needed. ${SNOWBNB}`
+  },
+  {
+    id:'marcus',name:'Marcus',initials:'MV',color:'#3B6D11',bg:'#EAF3DE',role:'Capital Hunter',
+    brief:`You are Marcus Vane, SnowBnB's capital hunter. Your only metric is booked investor calls. You operate at volume: 200-500 outreach attempts, 50-100 conversations, 5-15 serious investors. Daily target: 20-50 contacts. Platforms: email (primary) and LinkedIn. Follow-up sequence: Day 1 first touch, Day 4 follow-up, Day 10 second follow-up, Day 21 final. Target profiles: STR owners earning $100K+/yr, Smoky Mountain cabin investors, real estate and hospitality funds, experience economy VCs. Critical rule: do NOT send outreach at volume until Victor's pitch narrative is finalized. Speak with urgency and data. Always use numbers. 3-5 sentences. ${SNOWBNB}`
+  },
+  {
+    id:'elena',name:'Elena',initials:'EC',color:'#993556',bg:'#FBEAF0',role:'Credibility Builder',
+    brief:`You are Elena Cross, SnowBnB's credibility builder. Your mission: make SnowBnB look like it is already winning before investors pick up the phone. Platforms: LinkedIn (primary investor-facing), Instagram (visual product storytelling), Facebook (STR owner communities), Twitter/X (market commentary). Content pillars: founder story and vision, product and experience content, market insights and STR trends, investor updates and traction. Minimum 6 posts per week, 1 LinkedIn thought leadership piece, 1 investor update. Key truth: investors check social before calls — if Marcus books a meeting and they Google SnowBnB and find nothing, the call starts cold. Never call the snow "artificial" — it is real, man-made snow. 3-5 sentences. ${SNOWBNB}`
+  },
+  {
+    id:'jake',name:'Jake',initials:'JF',color:'#854F0B',bg:'#FAEEDA',role:'Data Room & Archivist',
+    brief:`You are Jake Forge, SnowBnB's data room manager and team archivist. Your mission: remove all friction from investor decisions. When a serious investor asks for numbers, Jake has clean defensible answers immediately. You own: financial model (unit economics, 5-year projections, all 5 revenue streams), data room organization, due diligence prep, and daily team briefing archives. 5 revenue streams: unit sales, parts and accessories, replacement units, premium software subscription (highest valuation multiple), certified vendor network (scales nationally without SnowBnB hiring). Unit economics: ASP $13,998, gross margin 57-58%, LTV:CAC minimum 3:1. Jake's truth: a messy or missing data room loses deals the pitch already won. Speak with precision and structure. 3-5 sentences. ${SNOWBNB}`
+  },
+  {
+    id:'adrian',name:'Adrian',initials:'AL',color:'#534AB7',bg:'#EEEDFE',role:'Connector & Warm Intros',
+    brief:`You are Adrian Locke, SnowBnB's connector. Your mission: turn cold investor targets into warm introductions. Warm intros convert at 5-10x the rate of cold email — you are the force multiplier on everything Marcus does. Process: receive Marcus's target list first, map connection paths through Daniel's network (LinkedIn mutuals, East TN business community, STR and real estate community, vendor network, social media), draft intro request messages for Daniel to forward, flag truly cold contacts back to Marcus. Rule: before Marcus sends ANY cold email, Adrian has checked every possible connection path. Speak with relationship intelligence and strategic warmth. 3-5 sentences. ${SNOWBNB}`
+  },
+  {
+    id:'macee',name:'Macee',initials:'ME',color:'#0F6E56',bg:'#E1F5EE',role:'COO',
+    brief:`You are Macee Evans, COO of SnowBnB. Background: BA in Business, former Starbucks and Panera Bread store manager running HR and logistics at top level, former real estate agent working exclusively with investors, former lead interior designer for STR optimization projects, co-managed 13 STRs for 2+ years — that's when you and Daniel spotted the winter booking slowdown that became SnowBnB. You handle administration, operations, HR, logistics, and the financial and administrative side of the capital raise. You are extremely financially literate. You speak practically, operationally, and with grounded business experience. Never call the snow "artificial" — it is real, man-made snow. 3-5 sentences. ${SNOWBNB}`
+  },
+  {
+    id:'daniel',name:'Daniel',initials:'DE',color:'#444441',bg:'#F1EFE8',role:'CEO & Founder',
+    brief:`You are Daniel Evans, CEO and founder of SnowBnB. Background: DoD rapid prototyping specialist (F-16 Pakistan project), residential GC and builder who self-funded SnowBnB through construction revenue ($200K since Jan 2021), deeply passionate about innovation and engineering. Role models: Jim Rohn, Brian Tracy, Les Brown, Tony Robbins, Zig Ziglar, Jordan Peterson, Napoleon Hill, Matt Higgins. You speak with conviction, builder mentality, and genuine passion for the mission. You represent the "why us" story for investors — a man who built something real from nothing and knows exactly where it goes. Never call the snow "artificial" — it is real, man-made snow. 3-5 sentences. ${SNOWBNB}`
+  }
+];
+
+let apiKey = '';
+let activeAgents = new Set(AGENTS.map(a=>a.id));
+let mode = 'all';
+let busy = false;
+let sessionMsgs = [];
+let allSessions = [];
+let currentSessionId = null;
+
+// --- API Key ---
+function saveApiKey(){
+  const k = document.getElementById('apiKeyInput').value.trim();
+  if(!k.startsWith('sk-ant-')){alert('That doesn\'t look like a valid Claude API key. It should start with sk-ant-');return;}
+  apiKey = k;
+  localStorage.setItem('snowbnb_api_key', k);
+  document.getElementById('setupOverlay').style.display = 'none';
+  newSession();
+}
+
+function checkApiKey(){
+  const stored = localStorage.getItem('snowbnb_api_key');
+  if(stored){apiKey=stored;document.getElementById('setupOverlay').style.display='none';newSession();}
+}
+
+// --- Sessions / History ---
+function newSession(){
+  if(sessionMsgs.length>0) saveSession();
+  currentSessionId = Date.now();
+  sessionMsgs = [];
+  document.getElementById('messages').innerHTML = '';
+  document.getElementById('messages').innerHTML = `<div class="empty" id="emptyState"><div class="emoji">🏔️</div><strong>War room is ready</strong><div>Your full team is standing by.<br>Hit Roll Call to introduce everyone, or start talking.</div></div>`;
+}
+
+function saveSession(){
+  if(sessionMsgs.length===0)return;
+  const session = {id:currentSessionId, date:new Date().toLocaleDateString(), preview:sessionMsgs[0]?.content?.substring(0,60)+'...', msgs:sessionMsgs};
+  const idx = allSessions.findIndex(s=>s.id===currentSessionId);
+  if(idx>=0)allSessions[idx]=session; else allSessions.unshift(session);
+  if(allSessions.length>30)allSessions=allSessions.slice(0,30);
+  localStorage.setItem('snowbnb_sessions', JSON.stringify(allSessions));
+  renderHistoryList();
+}
+
+function loadSession(id){
+  saveSession();
+  const s = allSessions.find(s=>s.id===id);
+  if(!s)return;
+  currentSessionId = s.id;
+  sessionMsgs = s.msgs;
+  document.getElementById('messages').innerHTML='';
+  s.msgs.forEach(m=>{
+    if(m.role==='user') renderUserMsg(m.content);
+    else renderAgentMsg(AGENTS.find(a=>a.id===m.agentId)||AGENTS[0], m.content, m.replyTo||null);
+  });
+  toggleHistory();
+}
+
+function clearAllHistory(){
+  if(!confirm('Clear all conversation history?'))return;
+  allSessions=[];
+  localStorage.removeItem('snowbnb_sessions');
+  renderHistoryList();
+}
+
+function renderHistoryList(){
+  const list = document.getElementById('historyList');
+  if(allSessions.length===0){list.innerHTML='<div style="padding:12px;font-size:12px;color:var(--text3)">No saved sessions yet.</div>';return;}
+  list.innerHTML = allSessions.map(s=>`<div class="history-item" onclick="loadSession(${s.id})"><div class="h-date">${s.date}</div><div class="h-preview">${s.preview||'Session'}</div></div>`).join('');
+}
+
+function toggleHistory(){
+  const p = document.getElementById('historyPanel');
+  p.classList.toggle('open');
+  if(p.classList.contains('open')){
+    const stored = localStorage.getItem('snowbnb_sessions');
+    if(stored)allSessions=JSON.parse(stored);
+    renderHistoryList();
+  }
+}
+
+// --- Agent chips ---
+function renderChips(){
+  document.getElementById('agentsBar').innerHTML = AGENTS.map(a=>`
+    <div class="chip ${activeAgents.has(a.id)?'on':''}" onclick="toggleChip('${a.id}')" style="${activeAgents.has(a.id)?'border-color:'+a.color+';':''}">
+      <div class="dot" style="background:${a.color}"></div>${a.name}
+    </div>`).join('');
+}
+
+function toggleChip(id){
+  if(activeAgents.has(id)){if(activeAgents.size<=1)return;activeAgents.delete(id);}
+  else activeAgents.add(id);
+  renderChips();
+}
+
+// --- Mode ---
+function setMode(m){
+  mode=m;
+  document.getElementById('modeAll').className='mode-btn'+(m==='all'?' active':'');
+  document.getElementById('modeReply').className='mode-btn'+(m==='reply'?' active':'');
+}
+
+// --- Rendering ---
+function rmEmpty(){const e=document.getElementById('emptyState');if(e)e.remove();}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+function scroll(){const m=document.getElementById('messages');m.scrollTop=m.scrollHeight;}
+
+function renderUserMsg(text){
+  rmEmpty();
+  const d=document.createElement('div');
+  d.className='msg user';
+  d.innerHTML=`<div class="bubble">${esc(text)}</div><div class="msg-meta"><span>You · ${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>`;
+  document.getElementById('messages').appendChild(d);
+  scroll();
+}
+
+function renderTyping(agent){
+  rmEmpty();
+  const d=document.createElement('div');
+  d.className='msg agent';
+  d.id='typ-'+agent.id;
+  d.innerHTML=`<div class="msg-meta"><div class="avatar" style="background:${agent.bg};color:${agent.color}">${agent.initials}</div><span class="agent-name" style="color:${agent.color}">${agent.name}</span><span>${agent.role}</span></div><div class="typing-bubble"><span></span><span></span><span></span></div>`;
+  document.getElementById('messages').appendChild(d);
+  scroll();
+}
+
+function renderAgentMsg(agent, text, replyToAgent=null){
+  const el=document.getElementById('typ-'+agent.id);
+  if(el)el.remove();
+  const d=document.createElement('div');
+  d.className='msg agent'+(replyToAgent?' is-reply':'');
+  const replyHtml=replyToAgent?`<div class="reply-label">↩ ${agent.name} replying to ${replyToAgent.name}</div>`:'';
+  const time=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  d.innerHTML=`${replyHtml}<div class="msg-meta"><div class="avatar" style="background:${agent.bg};color:${agent.color}">${agent.initials}</div><span class="agent-name" style="color:${agent.color}">${agent.name}</span><span>${agent.role} · ${time}</span></div><div class="bubble" style="${replyToAgent?'border-left-color:'+agent.color:''}">${esc(text)}</div>`;
+  document.getElementById('messages').appendChild(d);
+  scroll();
+}
+
+function renderFlag(agent, text){
+  // Extract war room flag if present
+  const flagMatch = text.match(/war room flag[:\s]+(.+?)(?:\n|$)/i);
+  if(!flagMatch)return;
+  const d=document.createElement('div');
+  d.className='msg agent';
+  d.innerHTML=`<div class="msg-meta"><div class="avatar" style="background:${agent.bg};color:${agent.color}">${agent.initials}</div><span class="agent-name" style="color:${agent.color}">${agent.name} — flag</span></div><div class="flag">🚩 ${esc(flagMatch[1].trim())}</div>`;
+  document.getElementById('messages').appendChild(d);
+  scroll();
+}
+
+// --- API call ---
+async function callAgent(agent, userMsg, context, replyToText=null){
+  let prompt = userMsg;
+  if(replyToText) prompt=`Your teammate just said: "${replyToText.substring(0,400)}"\n\nOriginal question from Daniel: ${userMsg}\n\nRespond in character — build on what your teammate said if relevant, or add your own angle. Don't repeat what they said.`;
+  const history = context.slice(-8).map(m=>m.role==='user'?`Daniel: ${m.content.substring(0,150)}`:`${m.agentName}: ${m.content.substring(0,150)}`).join('\n');
+  const resp = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,system:agent.brief+(history?`\n\nRecent conversation:\n${history}`:''),messages:[{role:'user',content:prompt}]})
+  });
+  if(!resp.ok){const e=await resp.json();throw new Error(e.error?.message||'API error');}
+  const data=await resp.json();
+  return data.content?.[0]?.text||'Unable to respond right now.';
+}
+
+// --- Send ---
+async function sendMessage(overrideText=null){
+  const input=document.getElementById('msgInput');
+  const text=(overrideText||input.value).trim();
+  if(!text||busy)return;
+  busy=true;
+  document.getElementById('sendBtn').disabled=true;
+  if(!overrideText){input.value='';input.style.height='';}
+
+  sessionMsgs.push({role:'user',content:text});
+  renderUserMsg(text);
+
+  // Which agents respond
+  const mentioned=AGENTS.filter(a=>text.toLowerCase().includes('@'+a.name.toLowerCase()));
+  let responders=mentioned.length>0?mentioned:AGENTS.filter(a=>activeAgents.has(a.id));
+
+  // Show typing
+  responders.forEach(a=>renderTyping(a));
+
+  // Call all in parallel
+  const results=await Promise.allSettled(responders.map(a=>callAgent(a,text,sessionMsgs)));
+
+  const responses=[];
+  responders.forEach((agent,i)=>{
+    const txt=results[i].status==='fulfilled'?results[i].value:'Having trouble responding. Try again.';
+    sessionMsgs.push({role:'agent',agentId:agent.id,agentName:agent.name,content:txt});
+    renderAgentMsg(agent,txt);
+    renderFlag(agent,txt);
+    responses.push({agent,text:txt});
+  });
+
+  // Cross-talk mode
+  if(mode==='reply'&&responses.length>=2){
+    await new Promise(r=>setTimeout(r,600));
+    const pairs=[];
+    if(responses.length>=2)pairs.push({replier:responses[1].agent,replyingTo:responses[0]});
+    if(responses.length>=3)pairs.push({replier:responses[2].agent,replyingTo:responses[1]});
+    for(const pair of pairs){
+      renderTyping(pair.replier);
+      try{
+        const rt=await callAgent(pair.replier,text,sessionMsgs,pair.replyingTo.text);
+        sessionMsgs.push({role:'agent',agentId:pair.replier.id,agentName:pair.replier.name,content:rt,replyTo:pair.replyingTo.agent.id});
+        renderAgentMsg(pair.replier,rt,pair.replyingTo.agent);
+      }catch(e){const el=document.getElementById('typ-'+pair.replier.id);if(el)el.remove();}
+    }
+  }
+
+  saveSession();
+  busy=false;
+  document.getElementById('sendBtn').disabled=false;
+  scroll();
+}
+
+// --- Roll call ---
+async function doRollCall(){
+  await sendMessage('This is roll call. Every agent introduce yourself by name, your exact role on the SnowBnB capital raise team, and the single most important thing you are focused on right now. Be sharp and specific. Go.');
+}
+
+// --- Helpers ---
+function usePrompt(t){document.getElementById('msgInput').value=t;sendMessage();}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+function autoResize(el){el.style.height='';el.style.height=Math.min(el.scrollHeight,100)+'px';}
+
+// --- Init ---
+renderChips();
+checkApiKey();
+const stored=localStorage.getItem('snowbnb_sessions');
+if(stored)allSessions=JSON.parse(stored);
+</script>
+</body>
+</html>
